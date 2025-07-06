@@ -3,33 +3,20 @@ import Editor from "./components/Editor";
 import SideMenu from "./components/SideMenu";
 import { notesAtom } from "./store";
 import { useEffect } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../convex/_generated/api"
+import { Note } from "./domain/note";
 
 function App() {
   const setNotes = useSetAtom(notesAtom);
-  const noteData = [
-    {
-      id: "1",
-      title: "Note 1",
-      content: "Content 1",
-      lastEditTime: new Date().getTime(),
-    },
-    {
-      id: "2",
-      title: "Note 2",
-      content: "Content 2",
-      lastEditTime: new Date().getTime(),
-    },
-    {
-      id: "3",
-      title: "Note 3",
-      content: "Content 3",
-      lastEditTime: new Date().getTime(),
-    },
-  ];
+  const initializeNotes = useQuery(api.notes.get)
 
   useEffect(() => {
-    setNotes(noteData);
-  }, [noteData]);
+    const notes = initializeNotes?.map(
+      (note) => new Note(note._id, note.title, note.content, note.lastEditTime)
+    )
+    setNotes(notes || []);
+  }, [setNotes, initializeNotes]);
 
   return (
     <>
