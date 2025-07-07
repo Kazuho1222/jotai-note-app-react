@@ -1,22 +1,23 @@
-import { useAtomValue, useSetAtom } from "jotai";
-import { saveNoteAtom, selectedNoteAtom } from "../store";
-import "@mdxeditor/editor/style.css";
 import {
+  BoldItalicUnderlineToggles,
+  InsertCodeBlock,
+  ListsToggle,
   MDXEditor,
+  codeBlockPlugin,
+  codeMirrorPlugin,
   headingsPlugin,
   listsPlugin,
   markdownShortcutPlugin,
   toolbarPlugin,
-  BoldItalicUnderlineToggles,
-  ListsToggle,
-  codeBlockPlugin,
-  codeMirrorPlugin,
-  InsertCodeBlock,
 } from "@mdxeditor/editor";
-import { useCallback, useEffect, useState } from "react";
-import { useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import "@mdxeditor/editor/style.css";
 import { useDebounce } from "@uidotdev/usehooks";
+import { useMutation } from "convex/react";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useEffect, useState } from "react";
+import { api } from "../../convex/_generated/api";
+import { Note } from "../domain/note";
+import { notesAtom, saveNoteAtom, selectedNoteAtom } from "../store";
 
 const plugins = [
   headingsPlugin(),
@@ -56,10 +57,12 @@ const plugins = [
 
 export const Editor = () => {
   const selectedNote = useAtomValue(selectedNoteAtom);
+  const [, setNotes] = useAtom(notesAtom);
   const updateNote = useMutation(api.notes.updateNote);
   const saveNote = useSetAtom(saveNoteAtom);
   const [content, setContent] = useState<string>("");
   const debouncedContent = useDebounce(content, 1000);
+
   useEffect(() => {
     if (!selectedNote || !debouncedContent) return;
     updateNote({
@@ -67,8 +70,13 @@ export const Editor = () => {
       content: debouncedContent,
       title: selectedNote.title,
     });
-  }, [debouncedContent, selectedNote, updateNote]);
 
+    // サーバーに保存した時にタイムスタンプを更新
+    const updatedNote = new Note(selectedNote.id, selectedNote.title, debouncedContent, Date.now());
+    setNotes((prev) =>
+      prev.map((n) => (n.id === selectedNote.id ? updatedNote : n))
+    );
+  }, [debouncedContent, selectedNote, updateNote, setNotes]);
 
   const handleContentChange = useCallback(
     (newContent: string) => {
