@@ -70,7 +70,7 @@ function SideMenu() {
         <h2 className="text-xl font-bold">Notes</h2>
         <button
           onClick={handleCreateNote}
-          className="p-2 bg-white rounded bover:bg-gray-50"
+          className="p-2 bg-white rounded hover:bg-gray-50"
         >
           <Plus className="h-4 w-4" />
         </button>
