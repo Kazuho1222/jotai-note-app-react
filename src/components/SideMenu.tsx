@@ -1,12 +1,12 @@
 import { useDebounce } from "@uidotdev/usehooks"
 import { useMutation } from "convex/react"
 import { useAtom, useAtomValue, useSetAtom } from "jotai"
+import { Plus, Trash2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { api } from "../../convex/_generated/api"
 import type { Id } from "../../convex/_generated/dataModel"
 import { Note } from "../domain/note"
 import { notesAtom, selectedNoteIdAtom } from "../store"
-import { Plus, Trash2 } from "lucide-react"
 
 function SideMenu() {
   const [notes, setNotes] = useAtom(notesAtom)
@@ -47,22 +47,19 @@ function SideMenu() {
   }
 
   const debouncedTitle = useDebounce(editingTitle?.title, 500)
+
   useEffect(() => {
-    if (editingTitle && debouncedTitle) {
-      handleUpdateTitle(editingTitle.id, debouncedTitle)
+    if (editingTitle && debouncedTitle !== undefined) {
+      const note = notes.find((n) => n.id === editingTitle.id)
+      if (!note || note.title === debouncedTitle) return
+
+      updateNote({
+        noteId: editingTitle.id,
+        title: debouncedTitle,
+        content: note.content,
+      })
     }
   }, [debouncedTitle])
-
-  const handleUpdateTitle = async (noteId: Id<"notes">, newTitle: string) => {
-    const note = notes.find((n) => n.id === noteId)
-    if (!note) return
-
-    await updateNote({
-      noteId,
-      title: newTitle,
-      content: note.content,
-    })
-  }
 
   return (
     <div className="w-64 h-screen bg-gray-100 p-4 flex flex-col">

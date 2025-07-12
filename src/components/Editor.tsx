@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { Note } from "../domain/note";
 import { notesAtom, saveNoteAtom, selectedNoteAtom } from "../store";
+import { useNoteSave } from "../hooks/useNoteSave"
 
 const plugins = [
   headingsPlugin(),
@@ -57,33 +58,42 @@ const plugins = [
 
 export const Editor = () => {
   const selectedNote = useAtomValue(selectedNoteAtom);
-  const [, setNotes] = useAtom(notesAtom);
-  const updateNote = useMutation(api.notes.updateNote);
-  const saveNote = useSetAtom(saveNoteAtom);
-  const [content, setContent] = useState<string>("");
-  const debouncedContent = useDebounce(content, 1000);
+  // const [, setNotes] = useAtom(notesAtom);
+  // const updateNote = useMutation(api.notes.updateNote);
+  // const saveNote = useSetAtom(saveNoteAtom);
+  // const [content, setContent] = useState<string>("");
+  // const debouncedContent = useDebounce(content, 1000);
+  const { debouncedSave } = useNoteSave()
 
-  useEffect(() => {
-    if (!selectedNote || !debouncedContent) return;
-    updateNote({
-      noteId: selectedNote.id,
-      content: debouncedContent,
-      title: selectedNote.title,
-    });
+  // useEffect(() => {
+  //   if (!selectedNote || debouncedContent === undefined) return;
 
-    // サーバーに保存した時にタイムスタンプを更新
-    const updatedNote = new Note(selectedNote.id, selectedNote.title, debouncedContent, Date.now());
-    setNotes((prev) =>
-      prev.map((n) => (n.id === selectedNote.id ? updatedNote : n))
-    );
-  }, [debouncedContent, selectedNote, updateNote, setNotes]);
+  //   if (selectedNote.content === debouncedContent) return
+
+  //   updateNote({
+  //     noteId: selectedNote.id,
+  //     content: debouncedContent,
+  //     title: selectedNote.title,
+  //   });
+
+  // サーバーに保存した時にタイムスタンプを更新
+  // const updatedNote = new Note(selectedNote.id, selectedNote.title, debouncedContent, Date.now());
+  //   setNotes((prev) =>
+  //     prev.map((n) =>
+  //       n.id === selectedNote.id
+  //         ? new Note(selectedNote.id, selectedNote.title, debouncedContent, Date.now())
+  //         : n
+  //     )
+  //   );
+  // }, [debouncedContent, selectedNote?.id, selectedNote?.title, updateNote, setNotes]);
 
   const handleContentChange = useCallback(
     (newContent: string) => {
-      setContent(newContent);
-      saveNote(newContent);
+      if (selectedNote) {
+        debouncedSave(selectedNote.id, selectedNote.title, newContent)
+      }
     },
-    [saveNote]
+    [selectedNote, debouncedSave]
   );
 
   return (
